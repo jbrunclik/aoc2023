@@ -1,7 +1,6 @@
-namespace Aoc2023;
-
-using System;
 using System.CommandLine;
+
+namespace Aoc2023;
 
 class Aoc2023
 {
@@ -30,14 +29,10 @@ class Aoc2023
         Type? dayType = Type.GetType($"Aoc2023.Day{day}.Day{day}");
         if (dayType == null)
         {
-            throw new ApplicationException($"Solution for Day {day} not implemented");
+            throw new NotImplementedException($"Solution for Day {day} not implemented");
         }
 
-        Solution? solution = (Solution?)Activator.CreateInstance(dayType);
-        if (solution == null)
-        {
-            throw new ApplicationException($"Unable to instantiate Day {day}");
-        }
+        Solution solution = (Solution?)Activator.CreateInstance(dayType)!;
 
         // Parse input data.
         string inputPath = Path.Combine(
@@ -47,7 +42,7 @@ class Aoc2023
         );
         solution.ParseInput(inputPath);
 
-        string result = solution.Solve();
-        Console.WriteLine($"Result: {result}");
+        Console.WriteLine($"Part 1 solution: {solution.Part1()}");
+        Console.WriteLine($"Part 2 solution: {solution.Part2()}");
     }
 }

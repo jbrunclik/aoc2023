@@ -1,23 +1,15 @@
-using System.Data;
+namespace Aoc2023;
 
-namespace Aoc2023
+abstract class Solution
 {
-    abstract class Solution
+    public string[] Input { get; set; } = [];
+
+    public void ParseInput(string inputPath)
     {
-        string[] _input = new string[] { };
-
-        public string[] Input
-        {
-            get => _input;
-            set => _input = value;
-        }
-
-        public void ParseInput(string inputPath)
-        {
-            Console.WriteLine($"Parsing input file \"{inputPath}\"...");
-            Input = File.ReadAllLines(inputPath);
-        }
-
-        public abstract string Solve();
+        Console.WriteLine($"Parsing input file \"{inputPath}\"...");
+        Input = File.ReadAllLines(inputPath);
     }
+
+    public abstract string Part1();
+    public abstract string Part2();
 }
