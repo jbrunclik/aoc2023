@@ -1,5 +1,3 @@
-using System.Diagnostics;
-
 namespace Aoc2023.Day2;
 
 class Day2 : Solution
