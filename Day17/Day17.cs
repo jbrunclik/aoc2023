@@ -23,7 +23,7 @@ partial class Day17 : Solution
         return new City(Blocks: blocks, LastRow: Input.Length - 1, LastCol: Input[0].Length - 1);
     }
 
-    int FindLowestHeatLoss(City city)
+    int FindLowestHeatLoss(City city, bool isUltra)
     {
         var visited = new HashSet<Block>();
         var queue = new PriorityQueue<Block, int>();
@@ -37,11 +37,17 @@ partial class Day17 : Solution
         {
             if (block.Coords == lastBlockCoords)
             {
-                return heatLoss;
+                // Standard crucible can stop immediately
+                if (!isUltra)
+                    return heatLoss;
+                // Ultra crucible can stop only after going straight at least 4 blocks
+                else if (block.Consecutive >= 4)
+                    return heatLoss;
             }
 
             foreach (var nextBlock in NextBlocks(block))
             {
+                // Out of bounds
                 if (
                     nextBlock.Coords.Row < 0
                     || nextBlock.Coords.Row > city.LastRow
@@ -49,6 +55,45 @@ partial class Day17 : Solution
                     || nextBlock.Coords.Col > city.LastCol
                 )
                     continue;
+
+                // Can't go back
+                if (
+                    block.Direction != null
+                    && nextBlock.Direction.Row == block.Direction.Row * -1
+                    && nextBlock.Direction.Col == block.Direction.Col * -1
+                )
+                    continue;
+
+                // Standard crucible
+                if (isUltra == false)
+                {
+                    // Must turn left or right after 3 blocks
+                    if (
+                        block.Direction != null
+                        && nextBlock.Direction == block.Direction
+                        && nextBlock.Consecutive > 3
+                    )
+                        continue;
+                }
+                // Ultra crucible
+                else
+                {
+                    // Must turn left or right after 10 blocks
+                    if (
+                        block.Direction != null
+                        && nextBlock.Direction == block.Direction
+                        && nextBlock.Consecutive > 10
+                    )
+                        continue;
+
+                    // Can't turn before going straight at least 4 blocks
+                    if (
+                        block.Direction != null
+                        && nextBlock.Direction != block.Direction
+                        && block.Consecutive < 4
+                    )
+                        continue;
+                }
 
                 if (!visited.Contains(nextBlock))
                 {
@@ -75,20 +120,10 @@ partial class Day17 : Solution
         {
             var newRow = block.Coords.Row + direction.Row;
             var newCol = block.Coords.Col + direction.Col;
-
-            // Can't go back
-            if (
-                block.Direction != null
-                && block.Direction.Row == direction.Row * -1
-                && block.Direction.Col == direction.Col * -1
-            )
-                continue;
-
-            // Can't go straight
-            if (block.Direction != null && block.Direction == direction && block.Consecutive >= 3)
-                continue;
-
-            var newConsecutive = (block.Direction == direction) ? block.Consecutive + 1 : 1;
+            var newConsecutive =
+                (block.Direction != null && block.Direction == direction)
+                    ? block.Consecutive + 1
+                    : 1;
             yield return new Block(
                 Coords: new Coords(Row: newRow, Col: newCol),
                 Direction: direction,
@@ -97,12 +132,7 @@ partial class Day17 : Solution
         }
     }
 
-    public override string Part1()
-    {
-        var city = ParseInput();
-        var lowestHeatLoss = FindLowestHeatLoss(city);
-        return lowestHeatLoss.ToString();
-    }
+    public override string Part1() => FindLowestHeatLoss(ParseInput(), false).ToString();
 
-    public override string Part2() => "";
+    public override string Part2() => FindLowestHeatLoss(ParseInput(), true).ToString();
 }
