@@ -1,56 +1,68 @@
 namespace Aoc2023.Day18;
 
-record Coords(int Row, int Col);
+record Coords(long Row, long Col);
 
-record Instruction(Coords Coords, int Steps, string Color);
+record Instruction(Coords Coords, long Steps);
 
 partial class Day18 : Solution
 {
-    static Coords DirectionToCoords(string direction) =>
+    static Coords CharToCoords(char direction) =>
         direction switch
         {
-            "L" => new Coords(Row: 0, Col: -1),
-            "R" => new Coords(Row: 0, Col: 1),
-            "U" => new Coords(Row: -1, Col: 0),
-            "D" => new Coords(Row: 1, Col: 0),
+            // Normal
+            'L' => new Coords(Row: 0, Col: -1),
+            'R' => new Coords(Row: 0, Col: 1),
+            'U' => new Coords(Row: -1, Col: 0),
+            'D' => new Coords(Row: 1, Col: 0),
+
+            // Swapped
+            '2' => new Coords(Row: 0, Col: -1),
+            '0' => new Coords(Row: 0, Col: 1),
+            '3' => new Coords(Row: -1, Col: 0),
+            '1' => new Coords(Row: 1, Col: 0),
+
             _ => throw new Exception($"Unknown direction {direction}")
         };
 
-    List<Instruction> ParseInput()
+    List<Instruction> ParseInput(bool isSwapped)
     {
         var instructions = new List<Instruction>();
         foreach (var line in Input)
         {
             var lineParts = line.Split(' ', 3);
-            var direction = lineParts[0];
-            var steps = int.Parse(lineParts[1]);
-            var color = lineParts[2]; // FIXME
 
-            var coords = DirectionToCoords(direction);
-            instructions.Add(new Instruction(Coords: coords, Steps: steps, Color: color));
+            Coords coords;
+            long steps;
+
+            if (!isSwapped)
+            {
+                coords = CharToCoords(lineParts[0].ToCharArray().First());
+                steps = long.Parse(lineParts[1]);
+            }
+            else
+            {
+                coords = CharToCoords(lineParts[2][7]);
+                steps = Convert.ToInt64(lineParts[2].Substring(2, 5), 16);
+            }
+
+            instructions.Add(new Instruction(Coords: coords, Steps: steps));
         }
         return instructions;
     }
 
     static List<Coords> ExecuteInstructions(List<Instruction> instructions)
     {
-        var row = 0;
-        var col = 0;
-
-        var minRow = int.MaxValue;
-        var minCol = int.MaxValue;
+        var row = 0L;
+        var col = 0L;
 
         var trench = new List<Coords>();
         foreach (var instruction in instructions)
         {
-            foreach (var x in Enumerable.Range(1, instruction.Steps))
+            for (var i = 0; i < instruction.Steps; i++)
             {
                 row += instruction.Coords.Row;
                 col += instruction.Coords.Col;
                 trench.Add(new Coords(Row: row, Col: col));
-
-                minRow = Math.Min(minRow, row);
-                minCol = Math.Min(minCol, col);
             }
         }
 
@@ -58,10 +70,10 @@ partial class Day18 : Solution
     }
 
     // https://en.wikipedia.org/wiki/Shoelace_formula
-    static int TrenchArea(List<Coords> trench)
+    static long TrenchArea(List<Coords> trench)
     {
-        int area = 0;
-        int j = trench.Count - 1;
+        var area = 0L;
+        var j = trench.Count - 1;
         for (int i = 0; i < trench.Count; i++)
         {
             area += (trench[j].Col + trench[i].Col) * (trench[j].Row - trench[i].Row);
@@ -70,13 +82,13 @@ partial class Day18 : Solution
         return Math.Abs(area / 2);
     }
 
-    static int BoundaryPoints(List<Instruction> instructions) =>
-        instructions.Aggregate(0, (current, i) => current + i.Steps);
+    static long BoundaryPoints(List<Instruction> instructions) =>
+        instructions.Aggregate(0L, (current, i) => current + i.Steps);
 
     // https://en.wikipedia.org/wiki/Pick%27s_theorem
-    static int InteriorPoints(int area, int boundary) => area - boundary / 2 + 1;
+    static long InteriorPoints(long area, long boundary) => area - boundary / 2 + 1;
 
-    static int TrenchPoints(List<Coords> trench, List<Instruction> instructions)
+    static long TrenchPoints(List<Coords> trench, List<Instruction> instructions)
     {
         var area = TrenchArea(trench);
         var boundary = BoundaryPoints(instructions);
@@ -86,10 +98,15 @@ partial class Day18 : Solution
 
     public override string Part1()
     {
-        var instructions = ParseInput();
+        var instructions = ParseInput(false);
         var trench = ExecuteInstructions(instructions);
         return TrenchPoints(trench, instructions).ToString();
     }
 
-    public override string Part2() => "";
+    public override string Part2()
+    {
+        var instructions = ParseInput(true);
+        var trench = ExecuteInstructions(instructions);
+        return TrenchPoints(trench, instructions).ToString();
+    }
 }
