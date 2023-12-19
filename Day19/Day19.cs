@@ -4,6 +4,8 @@ namespace Aoc2023.Day19;
 
 record Condition(string Target, string? Param = null, string? Op = null, int? Value = null);
 
+record Range(int First, int Last);
+
 partial class Day19 : Solution
 {
     (Dictionary<string, List<Condition>>, List<Dictionary<string, int>>) ParseInput()
@@ -114,7 +116,89 @@ partial class Day19 : Solution
         return parts.Where(p => IsAccepted(workflows, p)).Select(SumRatings).Sum().ToString();
     }
 
-    public override string Part2() => "";
+    (Range, Range) SplitRange(Range range, string op, int value)
+    {
+        if (op == "<")
+            return (new Range(range.First, value - 1), new Range(value, range.Last));
+        else if (op == ">")
+            return (new Range(range.First, value), new Range(value + 1, range.Last));
+        throw new ApplicationException($"Uknown operation {op}");
+    }
+
+    List<Dictionary<string, Range>> FindValidRanges(Dictionary<string, List<Condition>> workflows)
+    {
+        var validRanges = new List<Dictionary<string, Range>>();
+
+        var queue = new Queue<(Dictionary<string, Range>, string)>();
+        queue.Enqueue(
+            (
+                new Dictionary<string, Range>
+                {
+                    { "x", new Range(1, 4000) },
+                    { "m", new Range(1, 4000) },
+                    { "a", new Range(1, 4000) },
+                    { "s", new Range(1, 4000) },
+                },
+                "in"
+            )
+        );
+
+        while (queue.Count > 0)
+        {
+            var (ranges, workflow) = queue.Dequeue();
+
+            if (workflow == "A")
+            {
+                validRanges.Add(ranges);
+                continue;
+            }
+            else if (workflow == "R")
+                continue;
+
+            foreach (var condition in workflows[workflow])
+            {
+                if (condition.Op == null)
+                    queue.Enqueue((ranges, condition.Target));
+                else
+                {
+                    var (left, right) = SplitRange(
+                        ranges[condition.Param!],
+                        condition.Op,
+                        (int)condition.Value!
+                    );
+
+                    ranges.Remove(condition.Param!);
+                    var newRanges = new Dictionary<string, Range>(ranges);
+
+                    if (condition.Op == "<")
+                    {
+                        ranges[condition.Param!] = right;
+                        newRanges[condition.Param!] = left;
+                    }
+                    else if (condition.Op == ">")
+                    {
+                        ranges[condition.Param!] = left;
+                        newRanges[condition.Param!] = right;
+                    }
+
+                    queue.Enqueue((newRanges, condition.Target));
+                }
+            }
+        }
+
+        return validRanges;
+    }
+
+    int RangeLength(Range range) => range.Last - range.First + 1;
+
+    long RangeProduct(Dictionary<string, Range> ranges) =>
+        ranges.Values.Aggregate(1L, (current, range) => current * RangeLength(range));
+
+    public override string Part2()
+    {
+        var (workflows, _) = ParseInput();
+        return FindValidRanges(workflows).Select(r => RangeProduct(r)).Sum().ToString();
+    }
 
     [GeneratedRegex(
         @"(?<name>[a-z]+){(((?<param>[a-z]+)(?<op>[<>])(?<value>[0-9]+):)?(?<target>[a-zAR]+),?)+"
