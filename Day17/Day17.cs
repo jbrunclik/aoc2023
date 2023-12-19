@@ -59,8 +59,8 @@ partial class Day17 : Solution
                 // Can't go back
                 if (
                     block.Direction != null
-                    && nextBlock.Direction.Row == block.Direction.Row * -1
-                    && nextBlock.Direction.Col == block.Direction.Col * -1
+                    && nextBlock.Direction!.Row == block.Direction.Row * -1
+                    && nextBlock.Direction!.Col == block.Direction.Col * -1
                 )
                     continue;
 
